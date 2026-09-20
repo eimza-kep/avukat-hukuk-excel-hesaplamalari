@@ -1,0 +1,25 @@
+name: CI - Hukuk Excel Şablonları Doğrulama
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repoyu Klonla
+        uses: actions/checkout@v4
+
+      - name: Python 3.12 Kur
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Bağımlılıkları Kur
+        run: pip install openpyxl
+
+      - name: Excel Tablolarını Doğrula
+        run: python scripts/test_spreadsheets.py
