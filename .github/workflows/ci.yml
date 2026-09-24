@@ -23,3 +23,6 @@ jobs:
 
       - name: Excel Tablolarını Doğrula
         run: python scripts/test_spreadsheets.py
+
+      - name: Hukuki Hesaplama Motorunu Doğrula
+        run: python test_calculate.py
