@@ -4,9 +4,9 @@
 [![Şablon Sayısı](https://img.shields.io/badge/%C5%9Eablon_Say%C4%B1s%C4%B1-7_Excel_Arac%C4%B1-success.svg)](#-içerik-ve-şablon-listesi)
 [![Mevzuat](https://img.shields.io/badge/Mevzuat-2026_Uyumlu-blue.svg)](#)
 [![Lisans](https://img.shields.io/badge/Lisans-MIT-orange.svg)](LICENSE)
-[![Organizasyon](https://img.shields.io/badge/GitHub-eimza--kep-blue.svg)](https://github.com/eimza-kep)
+[![Organizasyon](https://img.shields.io/badge/GitHub-eimza--kep-blue.svg)](https://github.com)
 
-Avukatlar, stajyer avukatlar, hukuk büroları ve arabulucular için Türkiye Cumhuriyeti Adalet Bakanlığı ve Barolar Birliği mevzuatı (AAÜT, İİK, HMK, 3095 Sayılı Kanun, 4857 Sayılı İş Kanunu) esas alınarak hazırlanmış **7 adet formüllü ve profesyonel Excel (.xlsx) hesaplama şablonu**.
+Avukatlar, stajyer avukatlar, hukuk büroları ve arabulucular için Türkiye Cumhuriyeti Adalet Bakanlığı ve Barolar Birliği mevzuatı (AAÜT, İİK, HMK, 3095 Sayılı Kanun, 4857 Sayılı İş Kanunu) esas alınarak hazırlanmış **7 adet formüllü profesyonel Excel (.xlsx) şablonu** ve **Python CLI hesaplama motoru**.
 
 ---
 
@@ -24,32 +24,32 @@ Avukatlar, stajyer avukatlar, hukuk büroları ve arabulucular için Türkiye Cu
 
 ---
 
-## 💡 Öne Çıkan Özellikler
+## ⚡ CLI Hesaplama Motoru (Python)
 
-* **Kademeli Dilim Mantığı:** AAÜT ve Arabuluculuk tablolarında tek bir yeknesak oran yerine Resmi Gazete'deki kademeli baremler (`MIN`, `MAX` fonksiyonları ile) otomatik hesaplanır.
-* **Kapak Hesabı Güvenliği:** İcra dosyası kapatılırken borçludan talep edilecek tahsil harcı ve cezaevi harcı kuruşu kuruşuna denetlenir.
-* **Görsel Tasarım:** Ağır kurumsal bordo ve lacivert renk teması, okunabilir büyük puntolar ve anlaşılır açıklama sütunları.
-* **Sıfır Makro:** Tamamen saf `.xlsx` formatındadır; UYAP bilgisayarlarında veya mobil cihazlarda sorunsuz çalışır.
-
----
-
-## 🧪 Test ve Doğrulama
-
-Tüm hukuk tabloları CI test betiği ile denetlenir:
+Excel açmadan terminalden saniyeler içinde hesaplama yapabilirsiniz:
 
 ```bash
-pip install openpyxl
-python scripts/test_spreadsheets.py
+# AAÜT Nispi Vekalet Ücreti
+python calculate_legal.py aaut 250000
+
+# İcra Dosya Kapak Hesabı (Asıl alacak + faiz + masraf)
+python calculate_legal.py icra 100000 --faiz 12000 --masraf 1500
+
+# Arabuluculuk Ücreti
+python calculate_legal.py arabuluculuk 150000
 ```
 
 ---
 
-## 🌐 E-Dönüşüm Ekosistemi
+## 🌐 E-Dönüşüm & LegalTech Ekosistemi
 
-Bu depo, [@eimza-kep](https://github.com/eimza-kep) açık kaynak ekosisteminin bir parçasıdır:
-* 📖 [e-donusum-rehberleri](https://github.com/eimza-kep/e-donusum-rehberleri) - 24 adet rehber ve UYAP/E-İmza tıkla-çalıştır araçları.
-* 📊 [muhasebe-excel-sablonlari](https://github.com/eimza-kep/muhasebe-excel-sablonlari) - e-SMM, Tevkifat, Kıdem ve Bordro hesaplayıcıları.
-* 🏢 [kobi-finans-yonetim-excel-sablonlari](https://github.com/eimza-kep/kobi-finans-yonetim-excel-sablonlari) - KOBİ nakit akış, başabaş ve stok tabloları.
+Bu depo, [@eimza-kep](https://github.com/eimza-kep) açık kaynak LegalTech ve e-dönüşüm ekosisteminin bir parçasıdır:
+
+* ⚖️ **[avukat-muvekkil-on-kayit-scripti](https://github.com/eimza-kep/avukat-muvekkil-on-kayit-scripti):** Avukatlar için müvekkil ön görüşme ve çıkar çatışması (conflict check) portalı.
+* ⚖️ **[avukat-arabuluculuk-basvuru-scripti](https://github.com/eimza-kep/avukat-arabuluculuk-basvuru-scripti):** Arabuluculuk başvuru ve toplantı tutanağı portalı.
+* 📝 **[udf2md](https://github.com/eimza-kep/udf2md):** UYAP UDF dosyalarını yapay zekanın (LLM/RAG) okuyabileceği Markdown ve JSON formatına dönüştürücü.
+* 🛠️ **[uyap-editor-hizli-onarim](https://github.com/eimza-kep/uyap-editor-hizli-onarim):** UYAP Doküman Editörü açılmama ve Java bellek aşımı onarım aracı.
+* 🇹🇷 **[awesome-turkiye-e-donusum](https://github.com/eimza-kep/awesome-turkiye-e-donusum):** Türkiye E-Dönüşüm ve LegalTech kütüphaneleri listesi.
 
 ---
 

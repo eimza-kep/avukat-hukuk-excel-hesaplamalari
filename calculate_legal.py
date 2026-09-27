@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Hukuk ve Avukatlık Hesaplama CLI Motoru
-AAÜT Nispi Vekalet Ücreti, İcra Kapak Hesabı ve Yasal Faiz Hesaplayıcı.
+Hukuk ve Avukatlık Hesaplama CLI Motoru v1.2
+============================================
+AAÜT Nispi Vekalet Ücreti, İcra Dosya Kapak Hesabı ve Arabuluculuk
+Asgari Ücret Tarifesi (AAÜT) Hesaplayıcı Motoru.
+
+Yazar: E-İmza & Dijital Dönüşüm Portalı (https://uyap-teknik-destek.pages.dev/)
+Lisans: MIT
 """
 
 import sys
+import json
 
 # Force UTF-8 stdout
 if sys.platform == "win32":
@@ -46,7 +52,7 @@ def calculate_aaut_fee(alacak_tutari: float, kdv_orani: float = 0.20) -> dict:
         dilimler.append({
             "dilim_tutar": dilim_tutar,
             "oran": oran,
-            "ucret": dilim_ucret
+            "ucret": round(dilim_ucret, 2)
         })
         kalan -= dilim_tutar
 
@@ -90,9 +96,47 @@ def calculate_icra_kapak(asil_alacak: float, faiz: float = 0.0, masraf: float = 
         "dosya_kapak_bakiyesi": round(genel_toplam, 2)
     }
 
+def calculate_mediation_fee(anlasilan_tutar: float, kdv_orani: float = 0.20) -> dict:
+    """
+    6325 sayılı Kanun uyarınca Arabuluculuk Asgari Ücret Tarifesi (Nispi Ücret):
+    - İlk 100.000 TL için: %6
+    - Sonraki 160.000 TL için: %5
+    - Sonraki 340.000 TL için: %4
+    - Sonraki 500.000 TL için: %3
+    - Sonraki 1.000.000 TL için: %2
+    - Kalan tutar için: %1
+    """
+    kademeler = [
+        (100000, 0.06),
+        (160000, 0.05),
+        (340000, 0.04),
+        (500000, 0.03),
+        (1000000, 0.02),
+        (float('inf'), 0.01)
+    ]
+
+    kalan = max(0.0, float(anlasilan_tutar))
+    ucret = 0.0
+    for limit, oran in kademeler:
+        if kalan <= 0:
+            break
+        dilim = min(kalan, limit)
+        ucret += dilim * oran
+        kalan -= dilim
+
+    kdv = ucret * kdv_orani
+    return {
+        "anlasilan_tutar": anlasilan_tutar,
+        "net_arabuluculuk_ucreti": round(ucret, 2),
+        "kdv_tutari": round(kdv, 2),
+        "toplam_ucret": round(ucret + kdv, 2)
+    }
+
 def main():
     import argparse
-    parser = argparse.ArgumentParser(description="Hukuk ve Avukatlık Hesaplama Motoru")
+    parser = argparse.ArgumentParser(description="Hukuk ve Avukatlık Hesaplama Motoru v1.2")
+    parser.add_argument("--json", action="store_true", help="JSON formatında çıktı ver")
+    parser.add_argument("--markdown", action="store_true", help="Markdown formatında rapor üret")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # AAÜT
@@ -105,12 +149,22 @@ def main():
     p_icra.add_argument("--faiz", type=float, default=0.0, help="İşlemiş faiz tutarı")
     p_icra.add_argument("--masraf", type=float, default=0.0, help="Takip masrafları")
 
+    # Arabuluculuk
+    p_med = subparsers.add_parser("arabuluculuk", help="Arabuluculuk Asgari Ücreti Hesapla")
+    p_med.add_argument("tutar", type=float, help="Uyuşmazlıkta anlaşılan bedel (TL)")
+
     args = parser.parse_args()
 
     if args.command == "aaut":
         res = calculate_aaut_fee(args.tutar)
+        if args.json:
+            print(json.dumps(res, indent=2, ensure_ascii=False))
+            return
+        if args.markdown:
+            print(f"# AAÜT Nispi Vekalet Ücreti Raporu\n\n- **Dava Değeri:** {res['alacak_tutari']:,.2f} TL\n- **Net Ücret:** {res['net_vekalet_ucreti']:,.2f} TL\n- **KDV:** {res['kdv_tutari']:,.2f} TL\n- **Toplam Vekalet Ücreti:** **{res['toplam_ucret']:,.2f} TL**")
+            return
         print("=" * 60)
-        print("      AAÜT NİSPİ VEKALET ÜCRETİ HESAP TABLOSU")
+        print("      AAÜT NİSPİ VEKALET ÜCRETİ HESAP TABLOSU v1.2")
         print("=" * 60)
         print(f"Alacak / Dava Değeri : {res['alacak_tutari']:,.2f} TL")
         print(f"Net Vekalet Ücreti   : {res['net_vekalet_ucreti']:,.2f} TL")
@@ -120,8 +174,14 @@ def main():
 
     elif args.command == "icra":
         res = calculate_icra_kapak(args.alacak, args.faiz, args.masraf)
+        if args.json:
+            print(json.dumps(res, indent=2, ensure_ascii=False))
+            return
+        if args.markdown:
+            print(f"# İcra Dosya Kapak Raporu\n\n- **Asıl Alacak:** {res['asil_alacak']:,.2f} TL\n- **İcra Vekalet:** {res['icra_vekalet_ucreti']:,.2f} TL\n- **Tahsil Harcı:** {res['tahsil_harci']:,.2f} TL\n- **Kapak Bakiyesi:** **{res['dosya_kapak_bakiyesi']:,.2f} TL**")
+            return
         print("=" * 60)
-        print("        İCRA DOSYA KAPAK HESAP ÇIKTISI")
+        print("        İCRA DOSYA KAPAK HESAP ÇIKTISI v1.2")
         print("=" * 60)
         print(f"Asıl Alacak          : {res['asil_alacak']:,.2f} TL")
         print(f"İşlemiş Faiz         : {res['faiz']:,.2f} TL")
@@ -131,6 +191,20 @@ def main():
         print(f"Cezaevi Fonu (%2)    : {res['cezaevi_harci']:,.2f} TL")
         print("-" * 60)
         print(f"DOSYA KAPAK BAKİYESİ : {res['dosya_kapak_bakiyesi']:,.2f} TL")
+        print("=" * 60)
+
+    elif args.command == "arabuluculuk":
+        res = calculate_mediation_fee(args.tutar)
+        if args.json:
+            print(json.dumps(res, indent=2, ensure_ascii=False))
+            return
+        print("=" * 60)
+        print("     ARABULUCULUK ASGARİ ÜCRET HESAP TABLOSU v1.2")
+        print("=" * 60)
+        print(f"Anlaşılan Bedel      : {res['anlasilan_tutar']:,.2f} TL")
+        print(f"Net Arabuluculuk     : {res['net_arabuluculuk_ucreti']:,.2f} TL")
+        print(f"KDV                  : {res['kdv_tutari']:,.2f} TL")
+        print(f"TOPLAM ÜCRET         : {res['toplam_ucret']:,.2f} TL")
         print("=" * 60)
 
 if __name__ == "__main__":
