@@ -6,7 +6,7 @@ Hukuk ve Avukatlık Hesaplama CLI Motoru v1.2
 AAÜT Nispi Vekalet Ücreti, İcra Dosya Kapak Hesabı ve Arabuluculuk
 Asgari Ücret Tarifesi (AAÜT) Hesaplayıcı Motoru.
 
-Yazar: E-İmza & Dijital Dönüşüm Portalı (https://uyap-teknik-destek.pages.dev/)
+Yazar: E-İmza & Dijital Dönüşüm Portalı (https://uyapteknikdestek.site/)
 Lisans: MIT
 """
 
