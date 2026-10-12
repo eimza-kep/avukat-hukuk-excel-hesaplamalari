@@ -132,6 +132,24 @@ def calculate_mediation_fee(anlasilan_tutar: float, kdv_orani: float = 0.20) -> 
         "toplam_ucret": round(ucret + kdv, 2)
     }
 
+def calculate_yasal_faiz(tutar: float, gun_sayisi: int, faiz_orani: float = 0.24) -> dict:
+    """
+    3095 Sayılı Kanuni Faiz ve Temerrüt Faizi Hesabı:
+    - Faiz Tutarı = Tutar * Faiz Oranı * (Gün / 365)
+    """
+    tutar = float(tutar)
+    gun = int(gun_sayisi)
+    oran = float(faiz_orani)
+    faiz = tutar * oran * (gun / 365.0)
+    toplam = tutar + faiz
+    return {
+        "asil_alacak": round(tutar, 2),
+        "gun_sayisi": gun,
+        "yillik_faiz_orani": oran,
+        "faiz_tutari": round(faiz, 2),
+        "toplam_alacak": round(toplam, 2)
+    }
+
 def main():
     import argparse
     parser = argparse.ArgumentParser(description="Hukuk ve Avukatlık Hesaplama Motoru v1.2")
@@ -152,6 +170,12 @@ def main():
     # Arabuluculuk
     p_med = subparsers.add_parser("arabuluculuk", help="Arabuluculuk Asgari Ücreti Hesapla")
     p_med.add_argument("tutar", type=float, help="Uyuşmazlıkta anlaşılan bedel (TL)")
+
+    # Yasal Faiz
+    p_faiz = subparsers.add_parser("faiz", help="3095 s. Kanuni ve Temerrüt Faizi Hesaplayıcı")
+    p_faiz.add_argument("tutar", type=float, help="Asıl Alacak Tutarı (TL)")
+    p_faiz.add_argument("gun", type=int, help="Geçen Gün Sayısı")
+    p_faiz.add_argument("--oran", type=float, default=0.24, help="Yıllık faiz oranı (Varsayılan: 0.24 / %24)")
 
     args = parser.parse_args()
 
@@ -205,6 +229,25 @@ def main():
         print(f"Net Arabuluculuk     : {res['net_arabuluculuk_ucreti']:,.2f} TL")
         print(f"KDV                  : {res['kdv_tutari']:,.2f} TL")
         print(f"TOPLAM ÜCRET         : {res['toplam_ucret']:,.2f} TL")
+        print("=" * 60)
+
+    elif args.command == "faiz":
+        res = calculate_yasal_faiz(args.tutar, args.gun, args.oran)
+        if args.json:
+            print(json.dumps(res, indent=2, ensure_ascii=False))
+            return
+        if args.markdown:
+            print(f"# Yasal Faiz Hesap Raporu\n\n- **Asıl Alacak:** {res['asil_alacak']:,.2f} TL\n- **Gün:** {res['gun_sayisi']}\n- **Yıllık Faiz:** %{res['yillik_faiz_orani']*100:.2f}\n- **İşlemiş Faiz:** {res['faiz_tutari']:,.2f} TL\n- **Toplam Alacak:** **{res['toplam_alacak']:,.2f} TL**")
+            return
+        print("=" * 60)
+        print("        YASAL FAİZ VE TEMERRÜT FAİZİ HESAP TABLOSU")
+        print("=" * 60)
+        print(f"Asıl Alacak Tutarı   : {res['asil_alacak']:,.2f} TL")
+        print(f"İşlemiş Gün Sayısı   : {res['gun_sayisi']} gün")
+        print(f"Uygulanan Faiz Oranı : %{res['yillik_faiz_orani']*100:.2f}")
+        print(f"Hesaplanan Faiz      : +{res['faiz_tutari']:,.2f} TL")
+        print("-" * 60)
+        print(f"TOPLAM ALACAK TUTARI : {res['toplam_alacak']:,.2f} TL")
         print("=" * 60)
 
 if __name__ == "__main__":
