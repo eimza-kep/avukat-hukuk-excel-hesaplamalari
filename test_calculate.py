@@ -4,7 +4,9 @@ from calculate_legal import (
     calculate_inkar_tazminati,
     calculate_icra_kapak,
     calculate_mediation_fee,
-    calculate_yasal_faiz
+    calculate_yasal_faiz,
+    calculate_appellate_limits,
+    calculate_court_fees
 )
 
 class TestLegalCalculations(unittest.TestCase):
@@ -66,6 +68,58 @@ class TestLegalCalculations(unittest.TestCase):
         self.assertEqual(res["asil_alacak"], 365000.0)
         self.assertEqual(res["faiz_tutari"], 87600.0)
         self.assertEqual(res["toplam_alacak"], 452600.0)
+
+    def test_appellate_limits_below_istinaf(self):
+        # 2026 yılı HMK istinaf sınırı 58.520 TL; 40.000 TL alacak kesin olmalı
+        res = calculate_appellate_limits(40000.0, karar_yili=2026, mahkeme="hmk")
+        self.assertFalse(res["istinaf_acik"])
+        self.assertFalse(res["temyiz_acik"])
+        self.assertIn("KESİN", res["istinaf_durumu"])
+        # Senetle ispat sınırı (48.580 TL) altında kaldığından tanık dinlenebilir
+        self.assertFalse(res["senet_zorunlu"])
+
+    def test_appellate_limits_between_istinaf_and_temyiz(self):
+        # 2026 yılı 200.000 TL alacak: İstinafa AÇIK, fakat Temyize KAPALI (kesin), Senet Zorunlu
+        res = calculate_appellate_limits(200000.0, karar_yili=2026, mahkeme="hmk")
+        self.assertTrue(res["istinaf_acik"])
+        self.assertFalse(res["temyiz_acik"])
+        self.assertIn("AÇIK", res["istinaf_durumu"])
+        self.assertIn("KESİN", res["temyiz_durumu"])
+        self.assertTrue(res["senet_zorunlu"])
+
+    def test_appellate_limits_above_temyiz(self):
+        # 2026 yılı 1.000.000 TL alacak: İstinafa AÇIK ve Temyize AÇIK
+        res = calculate_appellate_limits(1000000.0, karar_yili=2026, mahkeme="hmk")
+        self.assertTrue(res["istinaf_acik"])
+        self.assertTrue(res["temyiz_acik"])
+        self.assertIn("AÇIK", res["temyiz_durumu"])
+
+    def test_appellate_limits_iik(self):
+        # 2026 yılı İİK İstinaf 136.930 TL, Temyiz 913.380 TL
+        # 100.000 TL -> İİK İstinaf Kesin
+        res_kesin = calculate_appellate_limits(100000.0, karar_yili=2026, mahkeme="iik")
+        self.assertFalse(res_kesin["istinaf_acik"])
+        self.assertEqual(res_kesin["istinaf_siniri"], 136930.0)
+
+        # 500.000 TL -> İstinaf Açık, Temyiz Kesin
+        res_istinaf = calculate_appellate_limits(500000.0, karar_yili=2026, mahkeme="iik")
+        self.assertTrue(res_istinaf["istinaf_acik"])
+        self.assertFalse(res_istinaf["temyiz_acik"])
+
+    def test_court_fees_nispi_and_maktu(self):
+        # 100.000 TL nispi dava, 2 taraf, 2026
+        # Karar ilam harcı: 100.000 * 0.06831 = 6.831 TL
+        # Peşin harç (1/4): 6.831 / 4 = 1.707,75 TL
+        res_nispi = calculate_court_fees(100000.0, taraf_sayisi=2, dava_turu="nispi", year=2026)
+        self.assertEqual(res_nispi["nispi_karar_ilam_harci"], 6831.0)
+        self.assertEqual(res_nispi["pesin_nispi_harc"], 1707.75)
+        self.assertGreater(res_nispi["gider_avansi"], 1000.0)
+        self.assertGreater(res_nispi["toplam_dava_acilis_masrafi"], 3000.0)
+
+        # Maktu dava
+        res_maktu = calculate_court_fees(100000.0, taraf_sayisi=2, dava_turu="maktu", year=2026)
+        self.assertEqual(res_maktu["nispi_karar_ilam_harci"], 0.0)
+        self.assertEqual(res_maktu["pesin_nispi_harc"], 650.0)
 
 if __name__ == "__main__":
     unittest.main()

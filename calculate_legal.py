@@ -269,6 +269,176 @@ def calculate_yasal_faiz(tutar: float, gun_sayisi: int, faiz_orani: float = 0.24
     }
 
 
+# -------------------------------------------------------------------------------------------------
+# HMK & İİK Parasal Kesinlik ve Kanun Yolu Sınırları Tablosu (2024, 2025, 2026, 2027)
+# -------------------------------------------------------------------------------------------------
+APPELLATE_LIMITS = {
+    2024: {
+        "hmk_istinaf": 28250.0,
+        "hmk_temyiz": 378290.0,
+        "hmk_senetle_ispat": 23450.0,
+        "iik_istinaf": 66090.0,
+        "iik_temyiz": 440850.0,
+        "hmk_durusma": 567430.0
+    },
+    2025: {
+        "hmk_istinaf": 40660.0,
+        "hmk_temyiz": 544510.0,
+        "hmk_senetle_ispat": 33750.0,
+        "iik_istinaf": 95130.0,
+        "iik_temyiz": 634560.0,
+        "hmk_durusma": 816770.0
+    },
+    2026: {
+        "hmk_istinaf": 58520.0,
+        "hmk_temyiz": 783760.0,
+        "hmk_senetle_ispat": 48580.0,
+        "iik_istinaf": 136930.0,
+        "iik_temyiz": 913380.0,
+        "hmk_durusma": 1175650.0
+    },
+    2027: {
+        "hmk_istinaf": 79000.0,
+        "hmk_temyiz": 1058000.0,
+        "hmk_senetle_ispat": 65580.0,
+        "iik_istinaf": 184850.0,
+        "iik_temyiz": 1233000.0,
+        "hmk_durusma": 1587000.0
+    }
+}
+
+
+def calculate_appellate_limits(dava_degeri: float, karar_yili: int = 2026, mahkeme: str = "hmk") -> dict:
+    """
+    HMK (Hukuk Muhakemeleri Kanunu) ve İİK (İcra ve İflas Kanunu) uyarınca:
+    - İstinaf Kesinlik Sınırı (HMK m. 341 / İİK m. 363)
+    - Temyiz Kesinlik Sınırı (HMK m. 362 / İİK m. 364)
+    - Senetle İspat Sınırı (HMK m. 200)
+    - Kanun yolu denetimi ve hukuki durum analizi
+    """
+    dava_degeri = float(dava_degeri)
+    karar_yili = int(karar_yili)
+    if karar_yili not in APPELLATE_LIMITS:
+        karar_yili = 2026 if karar_yili >= 2026 else 2024
+
+    limits = APPELLATE_LIMITS[karar_yili]
+    m_type = (mahkeme or "hmk").lower()
+
+    if m_type in ("iik", "icra", "icra_mahkemesi"):
+        mahkeme_adi = "İcra Mahkemesi (2004 sayılı İİK)"
+        istinaf_siniri = limits["iik_istinaf"]
+        temyiz_siniri = limits["iik_temyiz"]
+        istinaf_madde = "İİK m. 363"
+        temyiz_madde = "İİK m. 364"
+    else:
+        mahkeme_adi = "Hukuk Mahkemeleri (6100 sayılı HMK - Asliye/Ticaret/İş/Tüketici)"
+        istinaf_siniri = limits["hmk_istinaf"]
+        temyiz_siniri = limits["hmk_temyiz"]
+        istinaf_madde = "HMK m. 341"
+        temyiz_madde = "HMK m. 362"
+
+    senet_siniri = limits["hmk_senetle_ispat"]
+    durusma_siniri = limits["hmk_durusma"]
+
+    # İstinaf değerlendirmesi
+    if dava_degeri <= istinaf_siniri:
+        istinaf_acik = False
+        istinaf_durumu = "KESİN (İstinafa Başvurulamaz)"
+        istinaf_aciklama = f"Dava değeri ({dava_degeri:,.2f} TL), {karar_yili} yılı istinaf kesinlik sınırının ({istinaf_siniri:,.2f} TL) altında kaldığından karar ilk derece mahkemesinde KESİNDİR."
+    else:
+        istinaf_acik = True
+        istinaf_durumu = "AÇIK (Bölge Adliye Mahkemesi / BAM İstinaf Yolu Açık)"
+        istinaf_aciklama = f"Dava değeri ({dava_degeri:,.2f} TL), {karar_yili} yılı istinaf sınırını ({istinaf_siniri:,.2f} TL) aştığından {istinaf_madde} uyarınca kararın tebliğinden itibaren yasal süre içinde istinaf başvurusu yapılabilir."
+
+    # Temyiz değerlendirmesi
+    if not istinaf_acik or dava_degeri <= temyiz_siniri:
+        temyiz_acik = False
+        if not istinaf_acik:
+            temyiz_durumu = "KAPALI (İlk derece kararı kesin olduğundan temyiz söz konusu değildir)"
+        else:
+            temyiz_durumu = "KESİN (Bölge Adliye Mahkemesi / BAM Kararı Kesindir)"
+        temyiz_aciklama = f"Dava değeri ({dava_degeri:,.2f} TL), {karar_yili} yılı temyiz sınırının ({temyiz_siniri:,.2f} TL) altında kaldığından {temyiz_madde} uyarınca BAM kararı Yargıtay nezdinde KESİNDİR."
+    else:
+        temyiz_acik = True
+        temyiz_durumu = "AÇIK (Yargıtay Nezdinde Temyiz Yolu Açık)"
+        temyiz_aciklama = f"Dava değeri ({dava_degeri:,.2f} TL), {karar_yili} yılı temyiz sınırını ({temyiz_siniri:,.2f} TL) aştığından BAM kararına karşı Yargıtay nezdinde temyiz başvurusu yapılabilir."
+
+    # Senetle İspat Kuralı (HMK m. 200)
+    senet_zorunlu = dava_degeri > senet_siniri
+    senet_durumu = "YAZILI DELİL ZORUNLU (Tanık Dinlenemez)" if senet_zorunlu else "TANIKLA İSPAT MÜMKÜN"
+
+    return {
+        "dava_degeri": round(dava_degeri, 2),
+        "karar_yili": karar_yili,
+        "mahkeme_turu": mahkeme_adi,
+        "istinaf_siniri": round(istinaf_siniri, 2),
+        "temyiz_siniri": round(temyiz_siniri, 2),
+        "senetle_ispat_siniri": round(senet_siniri, 2),
+        "istinaf_acik": istinaf_acik,
+        "istinaf_durumu": istinaf_durumu,
+        "istinaf_aciklama": istinaf_aciklama,
+        "temyiz_acik": temyiz_acik,
+        "temyiz_durumu": temyiz_durumu,
+        "temyiz_aciklama": temyiz_aciklama,
+        "senet_zorunlu": senet_zorunlu,
+        "senet_durumu": senet_durumu,
+        "durusma_isteme_siniri": round(durusma_siniri, 2)
+    }
+
+
+def calculate_court_fees(dava_degeri: float, taraf_sayisi: int = 2, dava_turu: str = "nispi", year: int = 2026) -> dict:
+    """
+    492 Sayılı Harçlar Kanunu (1) Sayılı Tarife ve HMK m. 120 Gider Avansı Hesabı:
+    - Karar ve İlam Harcı: Binde 68,31 (%6.831)
+    - Peşin Harç (Karar Harcının 1/4'ü - Binde 17,0775)
+    - Maktu Başvuru Harcı
+    - HMK Gider Avansı (Taraf Başına Tebligat + Bilirkişi/Delil Avansı)
+    - Vekalet Harcı ve Baro Pulu
+    - Toplam Açılış Masrafı
+    """
+    dava_degeri = float(dava_degeri)
+    taraf = max(1, int(taraf_sayisi))
+    year = int(year)
+
+    if year >= 2026:
+        basvuru_harci = 650.00
+        vekalet_harci = 60.50
+        baro_pulu = 120.00
+        tebligat_birim = 280.00
+        delil_avansi = 800.00
+    else:
+        basvuru_harci = 427.60
+        vekalet_harci = 42.60
+        baro_pulu = 96.00
+        tebligat_birim = 180.00
+        delil_avansi = 500.00
+
+    if dava_turu.lower() == "maktu":
+        pesin_harc = basvuru_harci
+        nispi_karar_harci = 0.0
+    else:
+        nispi_karar_harci = dava_degeri * 0.06831
+        pesin_harc = nispi_karar_harci / 4.0
+
+    tebligat_avansi = taraf * tebligat_birim * 2 # Davetiye + Karar tebliği
+    gider_avansi = tebligat_avansi + delil_avansi
+    toplam_masraf = pesin_harc + basvuru_harci + vekalet_harci + baro_pulu + gider_avansi
+
+    return {
+        "dava_degeri": round(dava_degeri, 2),
+        "dava_turu": dava_turu,
+        "yil": year,
+        "nispi_karar_ilam_harci": round(nispi_karar_harci, 2),
+        "pesin_nispi_harc": round(pesin_harc, 2),
+        "basvuru_harci": round(basvuru_harci, 2),
+        "vekalet_harci": round(vekalet_harci, 2),
+        "baro_pulu": round(baro_pulu, 2),
+        "gider_avansi": round(gider_avansi, 2),
+        "toplam_dava_acilis_masrafi": round(toplam_masraf, 2),
+        "yasal_dayanak": "492 Sayılı Harçlar Kanunu (1) Sayılı Tarife ve 6100 sayılı HMK m. 120"
+    }
+
+
 def main():
     import argparse
     parser = argparse.ArgumentParser(description="Hukuk ve Avukatlık Hesaplama Motoru v2.0 (2026/2027 AAÜT & İİK Güncellemesi)")
@@ -309,6 +479,19 @@ def main():
     p_faiz.add_argument("tutar", type=float, help="Asıl Alacak Tutarı (TL)")
     p_faiz.add_argument("gun", type=int, help="Geçen Gün Sayısı")
     p_faiz.add_argument("--oran", type=float, default=0.24, help="Yıllık faiz oranı (Varsayılan: 0.24 / %%24)")
+
+    # Kanun Yolu Parasal Kesinlik Sınırları (HMK m. 341/362 & İİK m. 363/364)
+    p_ky = subparsers.add_parser("kanunyolu", help="HMK & İİK İstinaf/Temyiz Parasal Kesinlik Sınırları")
+    p_ky.add_argument("tutar", type=float, help="Dava veya icra takip alacak tutarı (TL)")
+    p_ky.add_argument("--year", type=int, default=2026, choices=[2024, 2025, 2026, 2027], help="Karar Yılı (Varsayılan: 2026)")
+    p_ky.add_argument("--mahkeme", type=str, default="hmk", choices=["hmk", "iik", "icra"], help="Mahkeme Türü (hmk: Asliye/Ticaret/İş, iik: İcra Mahkemesi)")
+
+    # Dava Harç ve Gider Avansı (492 Sayılı Harçlar Kanunu)
+    p_harc = subparsers.add_parser("harc", help="Dava Peşin Harç ve Gider Avansı Hesaplayıcı")
+    p_harc.add_argument("tutar", type=float, help="Dava Değeri (TL)")
+    p_harc.add_argument("--taraf", type=int, default=2, help="Davacı ve Davalı Toplam Taraf Sayısı (Varsayılan: 2)")
+    p_harc.add_argument("--tur", type=str, default="nispi", choices=["nispi", "maktu"], help="Dava Türü (nispi veya maktu)")
+    p_harc.add_argument("--year", type=int, default=2026, choices=[2024, 2025, 2026, 2027], help="Tarife Yılı")
 
     args = parser.parse_args()
 
@@ -417,6 +600,65 @@ def main():
         print("-" * 65)
         print(f"TOPLAM ALACAK TUTARI : {res['toplam_alacak']:,.2f} TL")
         print("=" * 65)
+
+    elif args.command == "kanunyolu":
+        res = calculate_appellate_limits(args.tutar, args.year, args.mahkeme)
+        if args.json:
+            print(json.dumps(res, indent=2, ensure_ascii=False))
+            return
+        if args.markdown:
+            print(f"# HMK & İİK Kanun Yolu Parasal Kesinlik Raporu ({res['karar_yili']})\n\n"
+                  f"- **Dava Değeri:** {res['dava_degeri']:,.2f} TL\n"
+                  f"- **Mahkeme:** {res['mahkeme_turu']}\n"
+                  f"- **İstinaf Kesinlik Sınırı:** {res['istinaf_siniri']:,.2f} TL -> **{res['istinaf_durumu']}**\n"
+                  f"- **Temyiz Kesinlik Sınırı:** {res['temyiz_siniri']:,.2f} TL -> **{res['temyiz_durumu']}**\n"
+                  f"- **Senetle İspat Sınırı:** {res['senetle_ispat_siniri']:,.2f} TL -> **{res['senet_durumu']}**\n\n"
+                  f"> {res['istinaf_aciklama']}\n\n> {res['temyiz_aciklama']}")
+            return
+        print("=" * 70)
+        print(f"     KANUN YOLU (İSTİNAF & TEMYİZ) PARASAL KESİNLİK RAPORU ({res['karar_yili']})")
+        print("=" * 70)
+        print(f"Dava / Uyuşmazlık Değeri : {res['dava_degeri']:,.2f} TL")
+        print(f"Mahkeme Türü             : {res['mahkeme_turu']}")
+        print("-" * 70)
+        print(f"İSTİNAF KESİNLİK SINIRI  : {res['istinaf_siniri']:,.2f} TL")
+        print(f"İstinaf Kanun Yolu Durumu: {res['istinaf_durumu']}")
+        print(f"İstinaf Değerlendirmesi  : {res['istinaf_aciklama']}")
+        print("-" * 70)
+        print(f"TEMYİZ KESİNLİK SINIRI   : {res['temyiz_siniri']:,.2f} TL")
+        print(f"Temyiz Kanun Yolu Durumu : {res['temyiz_durumu']}")
+        print(f"Temyiz Değerlendirmesi   : {res['temyiz_aciklama']}")
+        print("-" * 70)
+        print(f"HMK m. 200 Senet Sınırı  : {res['senetle_ispat_siniri']:,.2f} TL ({res['senet_durumu']})")
+        print("=" * 70)
+
+    elif args.command == "harc":
+        res = calculate_court_fees(args.tutar, args.taraf, args.tur, args.year)
+        if args.json:
+            print(json.dumps(res, indent=2, ensure_ascii=False))
+            return
+        if args.markdown:
+            print(f"# Dava Açılış Harç ve Avans Raporu ({res['yil']})\n\n"
+                  f"- **Dava Değeri:** {res['dava_degeri']:,.2f} TL ({res['dava_turu'].upper()})\n"
+                  f"- **Peşin Nispi Harç (1/4):** {res['pesin_nispi_harc']:,.2f} TL\n"
+                  f"- **Başvurma Harcı:** {res['basvuru_harci']:,.2f} TL\n"
+                  f"- **Gider Avansı (HMK m. 120):** {res['gider_avansi']:,.2f} TL\n"
+                  f"- **Vekalet Harcı & Baro Pulu:** {res['vekalet_harci'] + res['baro_pulu']:,.2f} TL\n"
+                  f"- **TOPLAM AÇILIŞ MASRAFI:** **{res['toplam_dava_acilis_masrafi']:,.2f} TL**")
+            return
+        print("=" * 68)
+        print(f"     DAVA AÇILIŞ HARÇ VE GİDER AVANSI HESAP TABLOSU ({res['yil']})")
+        print("=" * 68)
+        print(f"Dava Değeri / Harca Esas : {res['dava_degeri']:,.2f} TL ({res['dava_turu']})")
+        print(f"Karar ve İlam Harcı (%6.8): {res['nispi_karar_ilam_harci']:,.2f} TL")
+        print(f"Peşin Nispi Harç (1/4)   : {res['pesin_nispi_harc']:,.2f} TL")
+        print(f"Maktu Başvuru Harcı      : {res['basvuru_harci']:,.2f} TL")
+        print(f"Vekalet Harcı            : {res['vekalet_harci']:,.2f} TL")
+        print(f"Baro Pulu                : {res['baro_pulu']:,.2f} TL")
+        print(f"HMK m. 120 Gider Avansı  : {res['gider_avansi']:,.2f} TL")
+        print("-" * 68)
+        print(f"TOPLAM AÇILIŞ MASRAFI    : {res['toplam_dava_acilis_masrafi']:,.2f} TL")
+        print("=" * 68)
 
 
 if __name__ == "__main__":

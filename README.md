@@ -1,13 +1,13 @@
 # Hukuk ve Avukatlık Excel Hesaplama Araçları ⚖️🏛️
 
 [![CI - Hukuk Excel Doğrulama](https://github.com/eimza-kep/avukat-hukuk-excel-hesaplamalari/actions/workflows/ci.yml/badge.svg)](https://github.com/eimza-kep/avukat-hukuk-excel-hesaplamalari/actions/workflows/ci.yml)
-[![Şablon Sayısı](https://img.shields.io/badge/%C5%9Eablon_Say%C4%B1s%C4%B1-8_Excel_Arac%C4%B1-success.svg)](#-içerik-ve-şablon-listesi)
+[![Şablon Sayısı](https://img.shields.io/badge/%C5%9Eablon_Say%C4%B1s%C4%B1-9_Excel_Arac%C4%B1-success.svg)](#-içerik-ve-şablon-listesi)
 [![Mevzuat](https://img.shields.io/badge/Mevzuat-2026%2F2027_AA%C3%9CT_Uyumlu-blue.svg)](#)
 [![Python Engine](https://img.shields.io/badge/Python-CLI_v2.0-brightgreen.svg)](calculate_legal.py)
 [![Lisans](https://img.shields.io/badge/Lisans-MIT-orange.svg)](LICENSE)
 [![Organizasyon](https://img.shields.io/badge/GitHub-eimza--kep-blue.svg)](https://github.com)
 
-Avukatlar, stajyer avukatlar, hukuk büroları, icra müdürlükleri ve arabulucular için Türkiye Barolar Birliği (TBB) ve T.C. Adalet Bakanlığı mevzuatı (**2026/2027 Güncel AAÜT**, **İİK m. 67 & 68/a**, HMK, 3095 Sayılı Kanuni Faiz Kanunu, 4857 Sayılı İş Kanunu) esas alınarak hazırlanmış **8 adet formüllü profesyonel Excel (.xlsx) şablonu** ve **Python CLI hesaplama motoru**.
+Avukatlar, stajyer avukatlar, hukuk büroları, icra müdürlükleri ve arabulucular için Türkiye Barolar Birliği (TBB) ve T.C. Adalet Bakanlığı mevzuatı (**2026/2027 Güncel AAÜT**, **İİK m. 67 & 68/a**, **HMK m. 200, 341, 362**, **İİK m. 363, 364**, 3095 Sayılı Kanuni Faiz Kanunu, 4857 Sayılı İş Kanunu) esas alınarak hazırlanmış **9 adet formüllü profesyonel Excel (.xlsx) şablonu** ve **Python CLI hesaplama motoru**.
 
 ---
 
@@ -23,6 +23,7 @@ Avukatlar, stajyer avukatlar, hukuk büroları, icra müdürlükleri ve arabuluc
 | **13** | [`13_avukat_dava_ve_is_takip_cizelgesi.xlsx`](13_avukat_dava_ve_is_takip_cizelgesi.xlsx) | Dava dosyaları, duruşma tarihleri, istinaf/temyiz süreleri, kalan gün hesabı (`=Tarih - BUGÜN()`) ve sorumlu avukat takip matrisi. | HMK & UYAP İş Akışları |
 | **14** | [`14_ise_iade_ve_iscilik_alacaklari_hesaplayici.xlsx`](14_ise_iade_ve_iscilik_alacaklari_hesaplayici.xlsx) | Boşta geçen süre ücreti (en çok 4 ay), SGK/GV/DV kesintileri ve işe başlatmama tazminatı net alacak tablosu. | 4857 Sayılı İş Kanunu M.21 |
 | **15** | [`15_itirazin_iptali_ve_icra_inkar_tazminati_hesaplayici.xlsx`](15_itirazin_iptali_ve_icra_inkar_tazminati_hesaplayici.xlsx) | İİK m. 67 ve 68/a uyarınca itirazın kaldırılması, kısmi itiraz ayrımı, **asgari %20 İcra İnkar Tazminatı** ve yargılama gideri hesabı. | İİK Madde 67, 68 ve 68/a |
+| **16** | [`16_kanun_yolu_istinaf_temyiz_ve_kesinlik_sinirlari_hesaplayici.xlsx`](16_kanun_yolu_istinaf_temyiz_ve_kesinlik_sinirlari_hesaplayici.xlsx) | HMK m. 200, 341, 362 ve İİK m. 363, 364 parasal kesinlik sınırları (İstinaf/Temyiz kapalı/açık) ve 492 Sayılı Harçlar Kanunu peşin harç / gider avansı hesabı. | 6100 sayılı HMK, 2004 sayılı İİK & Harçlar Kanunu |
 
 ---
 
@@ -75,6 +76,27 @@ python calculate_legal.py faiz 250000 180 --oran 0.24
 python calculate_legal.py arabuluculuk 500000
 ```
 
+### 6. HMK & İİK Kanun Yolu (İstinaf / Temyiz) Parasal Kesinlik Sınırları
+```bash
+# 2026 yılı 150.000 TL dava değeri için istinaf ve temyiz denetimi:
+python calculate_legal.py kanunyolu 150000
+
+# İcra Mahkemesi (İİK m. 363/364) parasal sınırları:
+python calculate_legal.py kanunyolu 150000 --mahkeme iik
+
+# Markdown formatında yasal durum raporu alma:
+python calculate_legal.py kanunyolu 750000 --markdown
+```
+
+### 7. Dava Açılış Peşin Harç ve HMK m. 120 Gider Avansı Hesabı
+```bash
+# 250.000 TL nispi dava için peşin harç, başvuru harcı ve gider avansı:
+python calculate_legal.py harc 250000 --taraf 2
+
+# Maktu harca tabi dava için açılış masrafları:
+python calculate_legal.py harc 100000 --tur maktu --markdown
+```
+
 ---
 
 ## 🛠️ Kurulum ve Test Kılavuzu
@@ -101,10 +123,10 @@ python calculate_legal.py arabuluculuk 500000
 ### Birim Testleri Çalıştırma
 Tüm hesaplama algoritmalarını ve Excel dosyalarını doğrulamak için:
 ```bash
-# Hukuki hesaplama algoritmalarını test et (AAÜT, İİK 68/a, Faiz, Kapak):
+# Hukuki hesaplama algoritmalarını test et (AAÜT, İİK 68/a, Kanun Yolu, Faiz, Harç):
 python test_calculate.py
 
-# 8 adet Excel şablonunun hücre, formül ve başlık yapısını test et:
+# 9 adet Excel şablonunun hücre, formül ve başlık yapısını test et:
 python scripts/test_spreadsheets.py
 ```
 
