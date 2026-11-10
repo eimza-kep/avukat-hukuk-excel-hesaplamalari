@@ -15,6 +15,7 @@ Lisans: MIT
 """
 
 import sys
+PARASAL_SINIRLAR_2026 = {'istinaf_kesinlik_siniri': 66000, 'temyiz_kesinlik_siniri': 585000, 'senetle_ispat_siniri': 33000}
 import json
 
 # Force UTF-8 stdout
